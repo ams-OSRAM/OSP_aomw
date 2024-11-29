@@ -30,32 +30,33 @@
 // Installs a new script (and sets cursor at first instruction)
 // `numtriplets` is needed to scale the region indices.
 void aomw_tscript_install(const uint16_t *insts, uint16_t numtriplets); 
-// Plays the instruction under the internal cursor; moves cursor by one. If next instruction has "with prev" also executes it, and so on. 
+// Plays the instruction under the internal cursor; moves cursor by one. 
+// If next instruction has "with-previous" also executes it, and so on. 
 // If there is the end marker, wraps around.
-// Assumes topo has been built, and uses topo_settriplet for the regions
+// Assumes topo has been built, and uses topo_settriplet for the regions.
 aoresult_t aomw_tscript_playframe(); 
 
 
 // For do-it-yourself, there is an iterator over instructions
 typedef struct aomw_tscript_inst_s {
-  int             cursor;   // index into script
+  int             cursor;   // index to instruction in installed script
   uint16_t        code;     // raw code at cursor
   // following fields are decoded from `code`
-  bool            atend;    // end-marker
-  bool            withprev; // this instruction should be combined with previous (or starts a new frame)
-  uint16_t        tix0;     // start of the region (inclusive)
-  uint16_t        tix1;     // end of the region (exclusive)
-  aomw_topo_rgb_t rgb;      // color for the region ("demo brightness range" 0..0x7FFF)
+  bool            atend;    // instruction under cursor is end-of-script
+  bool            withprev; // this instruction should be combined with previous (else starts a new frame)
+  uint16_t        tix0;     // index of triplet at start-of-region (inclusive)
+  uint16_t        tix1;     // index of triplet at end-of-region (exclusive)
+  aomw_topo_rgb_t rgb;      // color for the region ("topo brightness range" 0..0x7FFF)
 } aomw_tscript_inst_t;
 
 
-// The cursor is at the instruction that marks the end
+// The cursor is at the instruction that marks the end ("end-of-script")
 bool aomw_tscript_atend();     
 // Move internal cursor to first instruction
 void aomw_tscript_gotofirst(); 
 // Move internal cursor to next instruction (except when atend, then cursor does not move)
 void aomw_tscript_gotonext();  
-// Gets instruction (all fields decoded)
+// Gets instruction details (all fields decoded)
 const aomw_tscript_inst_t * aomw_tscript_get();
 // Plays instruction under the cursor; precondition: !atend(); does not gotonext()       
 aoresult_t aomw_tscript_playinst();  
@@ -73,7 +74,3 @@ int              aomw_tscript_heartbeat_bytes();
 
 
 #endif
-
-
-
-

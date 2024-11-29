@@ -28,23 +28,22 @@ A "tiny script" consist of a number of instructions. One instruction sets a
 region, that is, a consecutive series of RGB triplets, to one color. For 
 example, one instruction could set triplets 1, 2, 3 to red. Another 
 instruction could set triplets 4, 5, 6 to white and yet another could set 
-7, 8, 9 to blue. An instruction has a flag "with previous". So if, in the 
-above example, the first instruction (red) does not have the "with previous" 
-flag set, but in the second (white) and the third (blue) do have that flag 
-set, the three instructions together make one frame drawing the Red/White/Blue 
-flag on triplets 1 to 9.
+7, 8, 9 to blue. Instruction have a flag "with-previous". So if, in the 
+above example, the second instruction (white) and the third instruction (blue)
+do have the with-previous flag set, the three instructions together make 
+one frame drawing the Red/White/Blue flag on triplets 1 to 9.
 
 A script runs on a chain of any length (any number of triplets). Triplets 
-are not address individually, but the chain is partitioned in regions. 
+are not addressed individually, but the chain is partitioned in regions. 
 Instructions set the color of a region as a whole. For this instructions 
 contain a start-of-region and an end-of-region index. These start and end 
 index need to be _mapped_ to physical triplets (depending on chain length). 
 
 A script needs to be stored in a 256 bytes EEPROM, so everything about this
 script is "tiny". Each instruction is 16 bit, and the red, green, and blue 
-levels, as well as the start and end index are only 3 bits each. In other 
-words, there are only 8 brightness levels and only 8 regions. An instruction 
-is coded as follows:
+brightness levels, as well as the start-of-region and end-of-region index 
+are only three bits each. In other words, there are only eight brightness 
+levels and only eight regions. An instruction is coded as follows:
 
   +----+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
   | 15 | 14| 13| 12| 11| 10| 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
@@ -56,8 +55,8 @@ is coded as follows:
 The regions are linearly distributed over all triplets, and the brightness
 levels are exponentially scaled.
 
-Note that each field of an instruction is 3 bits, so instructions
-are relatively readable when coding them in octal. Let's have a look at an
+Note that each field of an instruction is three bits, so instructions are 
+relatively readable when using octal notation. Let's have a look at an
 example:
 
   0007007,
@@ -65,16 +64,16 @@ example:
   0070000,
 
 The first instruction starts with 0, C-syntax for octal. We strip that and
-break the rest in pieces 0 07 007. The last three digits is 007 so red 0,
+break the rest in pieces 0 07 007. The last three digits are 007 so red 0,
 green 0 and blue 7, so brightest blue. The two digits before that 07 denote
-the region, here region 0 to 7, which means the whole chain. The leading 0
-means not "with previous", so this is/starts a frame.
+the region, here regions 0 to 7, which means the whole chain. The leading 0
+means not with-previous, so this is/starts a frame.
 
 The second instruction is 1 66 100 (dropping the leading octal 0). Here the 
-color is lowest red (100), and the region is only number (6..6). The
-"with previous" is set, so this instruction belongs to the same frame as the
+color is lowest red (100), and the region is only number 6 (6..6). The
+with-previous is set, so this instruction belongs to the same frame as the
 first instruction. The third instruction starts a new frame; it has
-"with previous" not set.
+with-previous not set.
 
 If the chain would be 16 long it would look as follows
   0 1 2 3 4 5 6 7 8 9101112131415  triplet index
@@ -82,7 +81,7 @@ If the chain would be 16 long it would look as follows
   B B B B B B B B B B B B r r B B  resulting frame
 
 The third instruction is special. The region runs from 7 to 0. This is 
-normally not a legal instruction. Instruction with start of region greater
+normally not a legal instruction. Instruction with start-of-region greater
 than end of region mean end-of-script.
 */
 
@@ -139,7 +138,8 @@ static void aomw_tscript_decode( ) {
 /*!
     @brief  Sets the script cursor to the first instruction of the script.
     @note   A script must have been installed with aomw_tscript_install().
-    @note   See aomw_tscript_get() for details.
+    @note   See aomw_tscript_get() for details of the instruction under 
+            the cursor.
 */
 void aomw_tscript_gotofirst() {
   aomw_tscript_cursor= 0;
@@ -153,7 +153,8 @@ void aomw_tscript_gotofirst() {
             then multiple calls to aomw_tscript_gotonext() until 
             aomw_tscript_atend() holds.
     @note   If aomw_tscript_atend() holds, the cursor is not moved.
-    @note   See aomw_tscript_get() for details.
+    @note   See aomw_tscript_get() for details of the instruction under 
+            the cursor.
 */
 void aomw_tscript_gotonext() {
   if( !aomw_tscript_atend() ) {
@@ -164,9 +165,13 @@ void aomw_tscript_gotonext() {
 
 
 /*!
-    @brief  Returns 1 if the script cursor is at the end-of-script instruction.
-    @return 1 iff the the triplet is on a channel of an OSP node.
+    @brief  Indicates if the script cursor is at the end of the script or
+            pointing at a valid instruction.
+    @return Returns true iff the script cursor is at the end-of-script instruction.
     @note   A script must have been installed with aomw_tscript_install().
+    @note   The end-of-script instruction is an instruction, acting as sentinel.
+            Any instruction with start-of-region greater than end-of-region 
+            indicates end-of-script, it is suggested to use 0070000 (octal).
 */
 bool aomw_tscript_atend() {
   return aomw_tscript_inst.atend;
@@ -174,7 +179,7 @@ bool aomw_tscript_atend() {
 
 
 /*!
-    @brief  Returns the instruction under the cursor.
+    @brief  Returns the (details of the) instruction under the cursor.
     @return (Pointer to a struct with the details of the) instruction under
             the cursor.
     @note   A script must have been installed with aomw_tscript_install().
@@ -191,10 +196,10 @@ bool aomw_tscript_atend() {
             brightness levels from the instruction (0..7) to brightness 
             levels used by topo (0..32767).
     @note   It is possible for the caller to use the instruction, however
-            the caller typically uses aomw_tscript_playinst() and 
-            aomw_tscript_playframe().
+            the caller typically uses aomw_tscript_playframe().
 */
 const aomw_tscript_inst_t * aomw_tscript_get() {
+  AORESULT_ASSERT( aomw_tscript_insts!=NULL ); // forgot aomw_tscript_install()?
   return &aomw_tscript_inst;
 }
 
@@ -205,7 +210,6 @@ const aomw_tscript_inst_t * aomw_tscript_get() {
             A pointer to the first instruction of an animation script.
     @param  numtriplets
             Number of RGB triplets in the OPS chain.
-    @note   A script must have been installed with aomw_tscript_install().
     @note   The animation script may be arbitrarily long, this module
             only records the pointer to the script. The script must have
             an end-of-script instruction.
@@ -213,7 +217,7 @@ const aomw_tscript_inst_t * aomw_tscript_get() {
             map region indices from the instruction (0..7) to triplet 
             indices spread over the OSP chain.
     @note   This module only supports one (active) animation script at a 
-            time. Secondly, it also support only one iterator on that script.
+            time. It also support only one iterator on that script.
     @note   This function also calls gotofirst().
 */
 void aomw_tscript_install(const uint16_t *insts, uint16_t numtriplets) {
@@ -228,7 +232,8 @@ void aomw_tscript_install(const uint16_t *insts, uint16_t numtriplets) {
 
 /*!
     @brief  Plays the the instruction under the cursor.
-    @return aoresult_ok           if triplets are set successfully
+    @return aoresult_assert       if atend() holds
+            aoresult_ok           if triplets are set successfully
             other error code      if there is a (communications) error
     @note   Playing the instruction means that the begin- and end-of-region 
             from the instruction are mapped to triplet indices in the OSP 
@@ -241,11 +246,12 @@ void aomw_tscript_install(const uint16_t *insts, uint16_t numtriplets) {
     @note   This function should not be called when aomw_tscript_atend() holds.
 */
 aoresult_t aomw_tscript_playinst() {
-  // Use internal `aomw_tscript_inst` instead of public `aomw_tscript_get()`
+  if( aomw_tscript_atend() ) return aoresult_assert;
+  // Using internal `aomw_tscript_inst` instead of public `aomw_tscript_get()`.
   // Serial.printf("#%d 0o%06o : %d [%d,%d) %04x.%04x.%04x\n", aomw_tscript_cursor, aomw_tscript_insts[aomw_tscript_cursor], aomw_tscript_inst.withprev, aomw_tscript_inst.tix0, aomw_tscript_inst.tix1, aomw_tscript_inst.rgb.r, aomw_tscript_inst.rgb.g, aomw_tscript_inst.rgb.b );
   for( uint16_t tix=aomw_tscript_inst.tix0; tix<aomw_tscript_inst.tix1; tix++ ) {
-    aoresult_t err= aomw_topo_settriplet(tix, &aomw_tscript_inst.rgb );
-    if( err!=aoresult_ok ) return err;
+    aoresult_t result= aomw_topo_settriplet(tix, &aomw_tscript_inst.rgb );
+    if( result!=aoresult_ok ) return result;
   }
   return aoresult_ok;
 }
@@ -254,8 +260,10 @@ aoresult_t aomw_tscript_playinst() {
 /*!
     @brief  Plays the the instruction under the cursor and uses the iterator
             to move to the next instruction. If next instruction has the 
-            "with prev" flag asserted, also executes it, and so on. 
-    @return aoresult_ok           if triplets are set successfully
+            with-previous flag asserted, also executes it, and so on. 
+    @return aoresult_assert       if script only has end-of-script instruction.
+            aoresult_outofmem     if there are too many with-previous in a row
+            aoresult_ok           if triplets are set successfully
             other error code      if there is a (communications) error
     @note   "Playing" is in the sense of aomw_tscript_playinst().
     @note   This function does move the cursor (using the iterator API).
@@ -267,9 +275,9 @@ aoresult_t aomw_tscript_playframe() {
   if( aomw_tscript_atend() ) aomw_tscript_gotofirst();
   int n=1;
   do {
-    if( n>8 ) return aoresult_other; // can not have more then 8 withprev, because there are only 8 segments
-    aoresult_t err= aomw_tscript_playinst();
-    if( err!=aoresult_ok ) return err;
+    if( n>8 ) return aoresult_outofmem; // can not have more then 8 with-previous, because there are only 8 segments
+    aoresult_t result= aomw_tscript_playinst();
+    if( result!=aoresult_ok ) return result;
     aomw_tscript_gotonext();
     n++;
   } while( aomw_tscript_get()->withprev );
@@ -282,7 +290,7 @@ aoresult_t aomw_tscript_playframe() {
 
 
 static const uint16_t aomw_tscript_rainbow_[] = {
-// Octal 0, 0 or 1 for with previous, 0..7 for lower index, 0..7 for upper index, 0..7 for red, 0..7 for green and 0..7 for blue
+// Octal 0, 0 or 1 for with-previous, 0..7 for lower index, 0..7 for upper index, 0..7 for red, 0..7 for green and 0..7 for blue
 //oPLURGB
 
   // From all black to all white
@@ -445,7 +453,7 @@ int aomw_tscript_rainbow_bytes() {
 
 
 static const uint16_t aomw_tscript_bouncingblock_[] = {
-// Octal 0, 0 or 1 for with previous, 0..7 for lower index, 0..7 for upper index, 0..7 for red, 0..7 for green and 0..7 for blue
+// Octal 0, 0 or 1 for with-previous, 0..7 for lower index, 0..7 for upper index, 0..7 for red, 0..7 for green and 0..7 for blue
 //oPLURGB
 
   // Red block moving left to right (1) on blue background (7)
@@ -660,7 +668,7 @@ int aomw_tscript_bouncingblock_bytes() {
 
 
 static const uint16_t aomw_tscript_colormix_[] = {
-// Octal 0, 0 or 1 for with previous, 0..7 for lower index, 0..7 for upper index, 0..7 for red, 0..7 for green and 0..7 for blue
+// Octal 0, 0 or 1 for with-previous, 0..7 for lower index, 0..7 for upper index, 0..7 for red, 0..7 for green and 0..7 for blue
 //oPLURGB
 
 
@@ -853,7 +861,7 @@ int aomw_tscript_colormix_bytes() {
 
 
 static const uint16_t aomw_tscript_heartbeat_[] = {
-// Octal 0, 0 or 1 for with previous, 0..7 for lower index, 0..7 for upper index, 0..7 for red, 0..7 for green and 0..7 for blue
+// Octal 0, 0 or 1 for with-previous, 0..7 for lower index, 0..7 for upper index, 0..7 for red, 0..7 for green and 0..7 for blue
 //oPLURGB
 
   // first heart beat

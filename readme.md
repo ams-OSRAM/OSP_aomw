@@ -13,7 +13,7 @@ The landing page for the _aolibs_ is on
 Library _aomw_ is a library with middleware for OSP applications.
 It implements features like building a topology map of an OSP chain 
 (which kind of chip at which address), has I2C device drivers 
-(for I2C devices typically connected to a SAID bride) and scripting 
+(for I2C devices used in the evaluation kit) and scripting 
 (simple light animations).
 
 ![aomw in context](extras/aolibs-aomw.drawio.png)
@@ -54,9 +54,9 @@ File > Examples > OSP Middleware aomw > ...
 
 -  **aomw_iox** ([source](examples/aomw_iox))  
    This demo initializes an OSP chain, powers the I2C bridge in a SAID and 
-   checks whether there is an I/O expander (IOX). An I/O expander is an 
+   checks whether there is an I/O-expander (IOX). An I/O-expander is an 
    I2C device that exposes a set of GPIO pins. If there is an IOX, the demo 
-   plays a light show on the connected signaling LEDs, which can be 
+   plays a light show on the connected indicator LEDs, which can be 
    interrupted by pressing a button connected to the IOX.
 
 -  **aomw_eeprom** ([source](examples/aomw_eeprom))  
@@ -87,7 +87,7 @@ This library contains several modules, see figure below (arrows indicate `#inclu
   
   Another high level feature of the topo module is to abstract away how to 
   _drive_ triplets (is a triplet on a channel, the channel's drive current 
-  settings, the available pwm bits). The topo module defines its own
+  settings, the available PWM bits). The topo module defines its own
   dynamic range: "topo brightness range", ranging from 0 to 0x7FFF and 
   is able to map that any triplet (RGBI's and RGBs connected to SAID).
   The `aomw_topo_settriplet` abstractions makes it _the API_ 
@@ -122,13 +122,13 @@ This library contains several modules, see figure below (arrows indicate `#inclu
   reads those EEPROMs and play the animation.
 
 - **aomw_iox** (`aomw_iox.cpp` and `aomw_iox.h`) is a driver for I2C based 
-  I/O expander (PCA6408ABSHP). An I/O expander is an I2C device that exposes
-  a set of GPIO pins. This driver is specificly written to control the 
-  I/O expander on the SAIDbasic board: 4 of its GPIOs are attached to a 
-  signaling LED, and 4 of its GPIOs are attached to a button.
+  I/O-expander (PCA6408ABSHP). An I/O-expander is an I2C device that exposes
+  a set of GPIO pins. This driver is specifically written to control the 
+  I/O-expander on the SAIDbasic board: 4 of its GPIOs are attached to a 
+  indicator LED, and 4 of its GPIOs are attached to a button.
 
   The app [aoapps_swflag](https://github.com/ams-OSRAM/OSP_aoapps/tree/main/src/aoapps_swflag)
-  uses the I/O expander to select one in four flags.
+  uses the I/O-expander to select one in four flags.
   
 - **aomw_flag** (`aomw_flag.cpp` and `aomw_flag.h`) is a module that can map
   one of its supported country flags (Dutch, European union) to the OSP chain. 
@@ -270,28 +270,28 @@ Finally this module has some stock scripts.
 
 ### aomw_iox
 
-Implements a driver for an I2C based I/O expander, specificaly for 
-SAIDbasic board: 4 of its GPIOs are attached to a signaling LED, and
+Implements a driver for an I2C based I/O-expander, specifically for 
+SAIDbasic board: 4 of its GPIOs are attached to a indicator LED, and
 4 of its GPIOs are attached to a button.
 
-First, the driver needs to be coupled to one I/O expander
+First, the driver needs to be coupled to an I/O-expander:
 
-- `aomw_iox_present(addr)` checks if the I/O expander is on the bus
+- `aomw_iox_present(addr)` checks if the I/O-expander is on the bus
   of the OSP node (SAID with I2C bridge).
-- `aomw_iox_init(addr)` couples the I/O expander to the driver.
+- `aomw_iox_init(addr)` couples the I/O-expander to the driver.
   This driver is not multi-instance. It can only control an IOX with I2C
   address AOMW_IOX_DADDR7 (0x20), and only one I2C bus - that is one SAID.
 
-For the signaling LEDs on the I/O expander:
+To control the indicator LEDs on the I/O-expander:
 
 - `aomw_iox_led_on(leds)`, `aomw_iox_led_off(leds)`, and `aomw_iox_led_set(leds)`
-  control the signaling LEDs connected to the I/O expander.
+  control the indicator LEDs connected to the I/O-expander.
 - `AOMW_IOX_LEDxxx` are the various masks denoting 1 (or zero, or all) 
-  signaling LEDs.
+  indicator LEDs.
 
-For buttons on the I/O expander:
+To check the buttons on the I/O-expander:
 
-- `aomw_iox_but_scan(buts)` scans all input lines of the I/O expander 
+- `aomw_iox_but_scan(buts)` scans all input lines of the I/O-expander 
   (those were the buttons are attached to) and stores the actual 
   four button states.
 - `aomw_iox_but_wentdown(buts)`, `aomw_iox_but_isdown(buts)`, 
@@ -331,15 +331,17 @@ The index can be used for this (lookup) table.
 
 ## Execution architecture
 
-One aspect in this library deserves touches the topic of execution 
-architecture. The topo build (`aomw_topo_build()`) sends multiple telegrams
-to probe the OSP chain and build the topology map.
+One aspect in this library touches the topic of execution architecture. 
+The topo build (`aomw_topo_build()`) sends multiple telegrams
+to probe the OSP chain and build the topology map. Running this is 
+one go would block other tasks (e.g. checking button presses or
+receiving commands via serial) for a too long time.
 
-This function has been split in three (`aomw_topo_build_start()`, 
-`aomw_topo_build_step()`, and `aomw_topo_build_done()`). These send
-one telegram per call. This is more suitable when other time critical
-tasks need to be executed as well (e.g. button pulling, or polling serial
-for incoming commands).
+Therefore, `aomw_topo_build()` has been split in three parts 
+(`aomw_topo_build_start()`, `aomw_topo_build_step()`, and 
+`aomw_topo_build_done()`). These functions send one telegram per call. 
+This is more suitable when other time critical
+tasks need to be executed as well.
 
 
 ## Commands
@@ -351,7 +353,7 @@ command interpreter. This makes the topology map and the high level
 ```cpp
 // Pick commands that we want in this application
 void cmds_register() {
-  aocmd_register();           // include all standard apps from aocmd
+  aocmd_register();           // include all standard commands from aocmd
   aomw_topo_cmd_register();   // include the topo command
   Serial.printf("cmds: registered\n");
 }
@@ -384,6 +386,12 @@ it is "query-able".
 
 ## Version history _aomw_
 
+- **2024 November 29, 0.4.2**
+  - Renamed some `err` variables to `result`.
+  - `aomw_tscript_get()` now has installe assert.
+  - Updated API documentation of tscript.
+  - Updated `readme.md` and some sources (typos, signaling -> indicator; I/O-expander).
+  
 - **2024 October 8, 0.4.1**
   - Fixed parsing problems Doxygen.
   - Prefixed `modules.drawio.png` with library short name.

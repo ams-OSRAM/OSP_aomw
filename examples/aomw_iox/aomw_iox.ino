@@ -1,4 +1,4 @@
-// aomw_iox.ino - demonstrates controlling the IOX (with 4 buttons and 4 signaling LEDs)
+// aomw_iox.ino - demonstrates controlling the IOX (with 4 buttons and 4 indicator LEDs)
 /*****************************************************************************
  * Copyright 2024 by ams OSRAM AG                                            *
  * All rights are reserved.                                                  *
@@ -26,9 +26,9 @@
 /*
 DESCRIPTION
 This demo initializes an OSP chain, powers the I2C bridge in a SAID and 
-checks whether there is an I/O expander (IOX). An I/O expander is an 
+checks whether there is an I/O-expander (IOX). An I/O-expander is an 
 I2C device that exposes a set of GPIO pins. If there is an IOX, the demo 
-plays a light show on the connected signaling LEDs, which can be 
+plays a light show on the connected indicator LEDs, which can be 
 interrupted by pressing a button connected to the IOX.
 
 HARDWARE
@@ -36,9 +36,9 @@ The demo needs the SAIDbasic to beconnected to the OSP32 board.
 In Arduino select board "ESP32S3 Dev Module".
 
 BEHAVIOR
-It shows a running LED using the four signaling LEDs on the SAID basic board
+It shows a running LED using the four indicator LEDs on the SAID basic board
 (associated with the four buttons). When a button is pressed, the running 
-stops, all signaling LEDs swithc on except the one associated with the pressed
+stops, all indicator LEDs swithc on except the one associated with the pressed
 button.
 
 OUTPUT
@@ -115,7 +115,7 @@ void loop() {
     return;
   }
 
-  // animate signaling LEDs
+  // animate indicator LEDs
   if( millis()-last>200 ) {
     last= millis();
     result= aomw_iox_led_off(AOMW_IOX_LED(led)); PRINT_ERROR();
