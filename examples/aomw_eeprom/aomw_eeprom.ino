@@ -125,7 +125,7 @@ void demo_init() {
   // (2patch) In case the SAID does not have the I2C_BRIDGE_EN, we could try to override this in RAM
   // result= aoosp_exec_i2cenable_set(ADDR,1); PRINT_ERROR();
 
-  // (2) Check if SAID has I2C bridge
+  // (2) check if SAID has I2C bridge
   int enable;
   result= aoosp_exec_i2cenable_get(ADDR, &enable); PRINT_ERROR();
   if( !enable ) result= aoresult_dev_noi2cbridge; PRINT_ERROR();

@@ -113,12 +113,12 @@ This library contains several modules, see figure below (arrows indicate `#inclu
   The script is an balance between functionality and low memory footprint.
   Instructions are 16 bits (so a 256 byte EEPROM can store 128 instructions).
   The RGB values in the instruction are only 3 bit each (so 8 shades). A more
-  detailed explanation is in [aomw_tscript.cpp](examples/aomw_tscript.cpp).
+  detailed explanation is in [aomw_tscript.cpp](src/aomw_tscript.cpp).
   
   This module also contains some animation scripts. The application 
   [eepromflasher](https://github.com/ams-OSRAM/OSP_aotop/tree/main/examples/eepromflasher)
   allows writing scripts to EEPROMs. The app 
-  [aoapps_aniscript](https://github.com/ams-OSRAM/OSP_aoapps/tree/main/src/aoapps_aniscript)
+  [aoapps_aniscript](https://github.com/ams-OSRAM/OSP_aoapps/tree/main/src/aoapps_aniscript.cpp)
   reads those EEPROMs and play the animation.
 
 - **aomw_iox** (`aomw_iox.cpp` and `aomw_iox.h`) is a driver for I2C based 
@@ -127,16 +127,17 @@ This library contains several modules, see figure below (arrows indicate `#inclu
   I/O-expander on the SAIDbasic board: 4 of its GPIOs are attached to a 
   indicator LED, and 4 of its GPIOs are attached to a button.
 
-  The app [aoapps_swflag](https://github.com/ams-OSRAM/OSP_aoapps/tree/main/src/aoapps_swflag)
-  uses the I/O-expander to select one in four flags.
+  The app [aoapps_swflag](https://github.com/ams-OSRAM/OSP_aoapps/tree/main/src/aoapps_swflag.cpp)
+  uses the buttons on the I/O-expander to select one in four flags
+  (and it used the indicators to indicate the currently selected one).
   
-- **aomw_flag** (`aomw_flag.cpp` and `aomw_flag.h`) is a module that can map
+- **aomw_flag** (`aomw_flag.cpp` and `aomw_flag.h`) is a module that can "paint"
   one of its supported country flags (Dutch, European union) to the OSP chain. 
-  The flags are available by name and by index.
-
-  This module uses `aomw_topo` to render the flags.
-  The app [aoapps_swflag](https://github.com/ams-OSRAM/OSP_aoapps/tree/main/src/aoapps_swflag)
-  uses this module render a flag.
+  The flags are available by name and by index. This module uses `aomw_topo` 
+  to render the flags on RGB modules.
+  
+  The app [aoapps_swflag](https://github.com/ams-OSRAM/OSP_aoapps/tree/main/src/aoapps_swflag.cpp)
+  uses this module to paint a flag.
 
    
 Each module has its own header file, but the library has an overarching 
@@ -385,6 +386,11 @@ it is "query-able".
 
 
 ## Version history _aomw_
+
+- **2025 March 3, 0.4.3**
+  - Extended memory for topo to cover largest possible OSP chain.
+  - Fixed typos in doc and code.
+  - Fixed links to apps.
 
 - **2024 November 29, 0.4.2**
   - Renamed some `err` variables to `result`.

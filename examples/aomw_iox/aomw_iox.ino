@@ -64,7 +64,7 @@ void demo_init() {
   aoresult_t result;
   result = aoosp_exec_resetinit(); PRINT_ERROR();
 
-  // (2) Check if SAID has I2C bridge
+  // (2) check if SAID has I2C bridge
   int enable;
   result= aoosp_exec_i2cenable_get(ADDR, &enable); PRINT_ERROR();
   if( !enable ) result= aoresult_dev_noi2cbridge; PRINT_ERROR();

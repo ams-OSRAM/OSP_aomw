@@ -222,7 +222,7 @@ uint8_t aomw_iox_but_isup( uint8_t buts ) {
     @note   This routine assumes the I/O-expander has I2C device address
             AOMW_IOX_DADDR7.
     @note   Sends I2C telegrams, so OSP must be initialized, eg via a call
-            to aoosp_exec_resetinit), and the I2C bus must be powered, eg via 
+            to aoosp_exec_resetinit(), and the I2C bus must be powered, eg via 
             a call to aoosp_exec_i2cpower(). Function aomw_topo_build()
             ensures both.
 */
@@ -256,7 +256,7 @@ aoresult_t aomw_iox_present(uint16_t addr ) {
     @note   It is allowed to call this function again, to associate this
             driver with a different I/O-expander.
     @note   Sends I2C telegrams, so OSP must be initialized, eg via a call
-            to aoosp_exec_resetinit), and the I2C bus must be powered, eg via 
+            to aoosp_exec_resetinit(), and the I2C bus must be powered, eg via 
             a call to aoosp_exec_i2cpower(). Function aomw_topo_build()
             ensures both.
 */

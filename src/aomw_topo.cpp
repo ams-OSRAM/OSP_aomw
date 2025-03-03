@@ -61,9 +61,12 @@
 // chain ready for pwm telegrams via aomw_topo_settriplet().
 
 
-#define AOMW_TOPO_MAXNODES       100 // Theoretical max is 1000 (addr space of OSP)
-#define AOMW_TOPO_MAXTRIPLETS    200 // Theoretical max is 3000 (3 triplets on 1000 SAIDs)
-#define AOMW_TOPO_MAXI2CBRIDGES    5 // Theoretical max is 1000 (every one of the 1000 SAIDs)
+// ESP32 has large RAM, go for max
+#define AOMW_TOPO_MAXNODES       AOOSP_ADDR_UNICASTMAX     
+#define AOMW_TOPO_MAXTRIPLETS    (3*AOOSP_ADDR_UNICASTMAX)
+#define AOMW_TOPO_MAXI2CBRIDGES  AOOSP_ADDR_UNICASTMAX     
+
+
 #define AOMW_TOPO_CHAN_NONE     0xFF // channel id used internally when there are no channels (ie for RGBI)
 
 
