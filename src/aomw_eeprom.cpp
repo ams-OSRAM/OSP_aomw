@@ -1,6 +1,6 @@
 // aomw_eeprom.cpp - driver for an I2C EEPROM (AT24C02C) connected to a SAID
 /*****************************************************************************
- * Copyright 2024 by ams OSRAM AG                                            *
+ * Copyright 2024,2025 by ams OSRAM AG                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -186,8 +186,8 @@ aoresult_t aomw_eeprom_compare(uint16_t addr, uint8_t daddr7, uint8_t raddr, con
     result= aoosp_exec_i2cread8(addr, daddr7, raddr, tmp, chunk);
     if( result!=aoresult_ok ) return result;
     if( memcmp(tmp,buf,chunk)!=0 ) {
-      // Serial.printf("EPM %02x: %s\n", raddr,aoosp_buf_str(tmp,chunk) );
-      // Serial.printf("MCU %02x: %s\n", raddr,aoosp_buf_str(buf,chunk) );
+      // Serial.printf("EEPROM %02x: %s\n", raddr,aoosp_prt_bytes(tmp,chunk) );
+      // Serial.printf("MCUROM %02x: %s\n", raddr,aoosp_prt_bytes(buf,chunk) );
       return aoresult_comparefail;
     }
     raddr+= chunk;

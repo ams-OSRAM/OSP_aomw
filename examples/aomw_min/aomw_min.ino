@@ -1,6 +1,6 @@
 // aomw_min.ino - minimal example using topo to blink an LED
 /*****************************************************************************
- * Copyright 2024 by ams OSRAM AG                                            *
+ * Copyright 2024,2025 by ams OSRAM AG                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -38,7 +38,7 @@ a terminator in OUT or a loop back cable from OUT to IN is needed.
 In Arduino select board "ESP32S3 Dev Module".
 
 BEHAVIOR
-The first RGB (L1.0) of SAID OUT blinks magenta and yellow,
+The first RGB (L1.0 aka OUT0) of SAID OUT blinks magenta and yellow,
 while printing this to Serial.
 
 OUTPUT

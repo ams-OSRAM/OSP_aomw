@@ -1,6 +1,6 @@
 // aomw_topo.cpp - compute a topological map of all nodes in the OSP chain
 /*****************************************************************************
- * Copyright 2024 by ams OSRAM AG                                            *
+ * Copyright 2024,2025 by ams OSRAM AG                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -56,7 +56,7 @@
 // and aomw_topo_i2cbridge_xxx().
 //
 // The aomw_topo_build also configures the chain: clearing error flags,
-// enable crc checking, powering i2C bridges, and last but not least setting 
+// enable crc checking, powering I2C bridges, and last but not least setting 
 // the drive current and going active. This makes all the nodes in the OSP 
 // chain ready for pwm telegrams via aomw_topo_settriplet().
 
@@ -322,6 +322,33 @@ void aomw_topo_dump_i2cbridges() {
   for( uint16_t iix=0; iix<aomw_topo_numi2cbridges_; iix++ ) {
     Serial.printf("I%d N%03X\n", iix,aomw_topo_i2cbridge_addr(iix) );
   }
+}
+
+
+/*!
+    @brief  Prints on Serial the max power consumption of the nodes in the "topology map".
+    @note   Only available after aomw_topo_build() - or start/step.
+*/
+void aomw_topo_dump_power() {
+  int num_rgbi= 0;
+  int num_said= 0;
+  for( uint16_t addr=1; addr<=aomw_topo_numnodes_; addr++ ) {
+    if( AOOSP_IDENTIFY_IS_RGBI(aomw_topo_node_id_[addr]) ) {
+      num_rgbi++;
+    } else if( AOOSP_IDENTIFY_IS_SAID(aomw_topo_node_id_[addr]) ) {
+      num_said++;
+    } else {
+    }
+  }
+  // Collect power summary
+  int num_50mA= num_rgbi*3;
+  int num_ch0_48mA= num_said*3;
+  int num_ch1_24mA= num_said*3;
+  int num_ch2_24mA= (num_said-aomw_topo_numi2cbridges_)*3;
+  int cur_mA= num_50mA*50 + num_ch0_48mA*48 + num_ch1_24mA*24 + num_ch2_24mA*24;
+  Serial.printf("said %d rgbi %d: maxpower %dx50mA + %dx48mA + %dx24mA + %dx24mA = %.3fA (%.3fW)\n", 
+    num_rgbi, num_said, num_50mA, num_ch0_48mA, num_ch1_24mA , num_ch2_24mA,
+    cur_mA/1000.0, 5.0*cur_mA/1000.0);
 }
 
 
@@ -626,7 +653,7 @@ aoresult_t aomw_topo_build() {
 static int aomw_topo_dim = AOMW_TOPO_DIM_DEFAULT;
 
 
-// We define some standard colors.
+// We define some standard colors in the AOMW_TOPO_BRIGHTNESS_MAX range.
 extern const aomw_topo_rgb_t aomw_topo_red    = { 0x7FFF,0x0000,0x0000, "red" };
 extern const aomw_topo_rgb_t aomw_topo_yellow = { 0x7FFF,0x7FFF,0x0000, "yellow" };
 extern const aomw_topo_rgb_t aomw_topo_green  = { 0x0000,0x7FFF,0x0000, "green" };
@@ -643,7 +670,7 @@ extern const aomw_topo_rgb_t aomw_topo_off    = { 0x0000,0x0000,0x0000, "off" };
             The index of the triplet.
     @param  rgb
             A topo color, each component (red, green, blue) has a brightness 
-            level from 0 to 0x7FFF (or AOMW_TOPO_BRIGHTNESS_MAX).
+            level from 0 to AOMW_TOPO_BRIGHTNESS_MAX (0x7FFF).
     @return aoresult_ok      if successful
             other error code if there is a (communications) error
     @note   Only available after aomw_topo_build() - or start/step.
@@ -776,10 +803,11 @@ static void aomw_topo_cmd( int argc, char * argv[] ) {
     return;
   } else if( aocmd_cint_isprefix("enum",argv[1]) ) {
     if( argc!=2 ) { Serial.printf("ERROR: 'enum' has too many args\n" ); return; }
-    aomw_topo_dump_nodes();
-    aomw_topo_dump_triplets();
-    aomw_topo_dump_i2cbridges();
+    if( argv[0][0]!='@' ) aomw_topo_dump_nodes();
+    if( argv[0][0]!='@' ) aomw_topo_dump_triplets();
+    if( argv[0][0]!='@' ) aomw_topo_dump_i2cbridges();
     aomw_topo_dump_summary();
+    aomw_topo_dump_power();
     return;
   } else if( aocmd_cint_isprefix("dim",argv[1]) ) {
     if( argc==2 ) { aomw_topo_dim_show(); return; }

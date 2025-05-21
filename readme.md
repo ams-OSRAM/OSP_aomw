@@ -12,13 +12,21 @@ The landing page for the _aolibs_ is on
 
 Library _aomw_ is a library with middleware for OSP applications.
 It implements features like building a topology map of an OSP chain 
-(which kind of chip at which address), has I2C device drivers 
+(which type of chip at which OSP address), has I2C device drivers 
 (for I2C devices used in the evaluation kit) and scripting 
 (simple light animations).
 
 ![aomw in context](extras/aolibs-aomw.drawio.png)
 
 These features are typically used in the `aoapps` library.
+
+The _aomw_ library also contains a module for color conversions.
+These are needed to tweak the PWM settings of individual RGB triplets
+in order for a series of them to all show the exact same color;
+and keep doing that when temperature changes. This library module 
+comes with an example; but it is not used in the various demos because 
+it requires management of color calibration data, beyond the scope of the
+evaluation kit.
 
 
 ## Examples
@@ -71,7 +79,23 @@ File > Examples > OSP Middleware aomw > ...
    animation scripts. The main program continuously loops over all script
    instructions to draw the frames.
 
+-  **aomw_colormath** ([source](examples/aomw_colormath))  
+   This demo shows how to compute the duty cycles for the R, G, and B LEDs of
+   a calibrated triplet, in order to reach a target color point. This demo 
+   also includes a (post-mixing) temperature correction.
+   The demo is "mathematical" in that it shows _how_ the computations are done.
+   Also, this demo does not _control_ triplets, or use actual sensor data 
+   (temperature), it spoofs inputs and only prints outputs to Serial. 
+   See `aomw_colordemo` for a more realistic example.
 
+-  **aomw_colordemo** ([source](examples/aomw_colordemo))  
+   This demo shows how to get uniform colors over multiple RGB triplets with
+   varying temperatures. It controls a SAID chain with triplets, using the 
+   temperature sensor in the SAIDs as an approximation of the triplets' 
+   temperatures. Note however, the supplied calibration data, although real, 
+   is very unlikely to match the users' hardware.
+
+      
 ## Module architecture
 
 This library contains several modules, see figure below (arrows indicate `#include`).
@@ -139,6 +163,14 @@ This library contains several modules, see figure below (arrows indicate `#inclu
   The app [aoapps_swflag](https://github.com/ams-OSRAM/OSP_aoapps/tree/main/src/aoapps_swflag.cpp)
   uses this module to paint a flag.
 
+- **aomw_color** (`aomw_color.cpp` and `aomw_color.h`) is a module that 
+  contains color data types and color conversion routines with the aim to
+  realize uniform colors in an OSP chain irrespective of variations in 
+  manufacturing (exact color point of an LED) and irrespective of local 
+  temperature (differences). This module comes with two examples 
+  ([math](examples/aomw_colormath)) and ([demo](examples/aomw_colordemo)); 
+  but it is not used in any real demo (because the calibration data does not 
+  match "your" hardware).
    
 Each module has its own header file, but the library has an overarching 
 header `aomw.h`, which includes the module headers. It is suggested that 
@@ -330,6 +362,126 @@ The index can be used for this (lookup) table.
 - `aomw_flag_count()`, `aomw_flag_name(pix)`, and `aomw_flag_painter(pix)`
 
 
+### aomw_color
+
+The color module has several data types representing colors in different 
+color spaces.
+
+- `aomw_color_cxcyiv1_t` and `aomw_color_cxcyiv3_t` 
+  CIE x,y coordinates and luminous intensity (Cx,Cy,Iv).
+  This is a color space that matches the human eye, it is used to _calibrate_
+  LED colors; it is less suited for color _computations_.
+  The helper functions `aomw_color_cxcyiv1_to_str()` and 
+  `aomw_color_cxcyiv3_to_str()` convert instances to a string.
+
+- `aomw_color_xyz1_t` and `aomw_color_xyz3_t` tristimulus X, Y, Z color space.
+  This color space is used by the color _computations_ in this library. 
+  The helper functions `aomw_color_xyz1_to_str()` and 
+  `aomw_color_xyz3_to_str()` convert instances to a string.
+
+- `aomw_color_mix_t` and `aomw_color_pwm_t` represent duty cycles as 
+  fractional numbers (`float`) or as (`uint16_t`) PWM settings.
+  The helper functions `aomw_color_mix_to_str()` and 
+  `aomw_color_pwm_to_str()` convert instances to a string.
+
+- `aomw_color_poly_t`, `aomw_color_poly1_t` and `aomw_color_poly3_t` 
+  represent polynomials that are used to correct a `aomw_color_cxcyiv1/3_t`
+  color point when temperature drifts away from the color calibration
+  reference temperature.
+
+Calibration data typically comes for less drive currents than the SAID 
+supports. Therefore, this library provides interpolation functions
+`aomw_color_interpolate3()` that interpolates between two 
+`aomw_color_cxcyiv3_t`. There is also the helper `aomw_color_interpolate1()`.
+
+Calibration data typically comes for one single reference temperature.
+Therefore this library provides temperature correction functions
+`aomw_color_poly_apply3()` on `aomw_color_cxcyiv3_t`.  There is also the 
+helper `aomw_color_poly_apply1()`.
+
+Calibration data typically comes in the form of `aomw_color_cxcyiv3_t`,
+but color computations use `aomw_color_xyz3_t`. This library 
+therefore has conversion function `aomw_color_cxcyiv3_to_xyz3()`.
+There is also the helper `aomw_color_cxcyiv1_to_xyz1()`.
+
+The color module has two color computation functions.
+
+- `aomw_color_computemix()` computes the mixing ratio of the red, green and
+  blue led, in order to reach a target color. It needs the calibration data
+  of the triplet for which to compute the mixing ratio.
+
+- `aomw_color_mix_to_pwm()` computes the PWM settings from the mixing
+  ratio.
+
+See section [Color computation](#color-computation) for details on 
+the implementation.
+
+
+## Color computation
+
+The module `aomw_color` provides an a reference implementation 
+of color computations with the aim to achieve uniform colors
+independent of _manufacturing variation_ and independent of LED
+_temperature_ at run time. It relies on a data base with 
+_color calibration_ data (color points) and _temperature correction_ 
+data ("polynomials") per RGB triplet. 
+
+Key input for the color computation is the _target_ color (which includes 
+brightness) that must be realized with some source triplet. Other inputs 
+are the selected drive current (which may depend on the target color), the 
+triplet temperature and the PWM range configured in the driver. 
+
+The diagram below shows the computation steps, all the inputs and the 
+database with calibration data. It is annotated (in fixed width font) with 
+the names of functions and data types from this library that are needed for 
+each step. Some of these are found in module `aomw_color`, others in the
+example [`aomw_colordemo`](examples/aomw_colordemo).
+
+![Color computation](extras/aomw_color.drawio.png)
+
+This flow computes the PWM settings for the red, green and blue LED of the 
+source triplet so that it emits the target color. 
+
+The example [`aomw_colordemo`](examples/aomw_colordemo) shows how a
+calibration database (`caldb`) could be organized:
+
+- The array `caldb_colors[]` stores the color points per RGB triplet for two 
+  drive currents. This results in storing three floats (Cx,Cy,Iv) for red, 
+  three for green and three for blue, times two (for the drive currents).
+  This results in 18 floats per triplet.
+  
+- Given a triplet index and a drive current, the `caldb` interpolates between
+  the two stored drive currents to obtain (Cx,Cy,Iv) for red, green and blue.
+
+- The array `caldb_polys[]` stores the temperature dependencies (via a second 
+  degree polynomial) per RGB triplet. This results in storing two float
+  polynomial coefficients (a,b) per color space component (Cx,Cy,Iv) for red, 
+  three for green and three for blue. This results in another 18 floats per 
+  triplet. The `aomw_colordemo` also shows a solution that uses one generic
+  polynomial instead of per triplet.
+
+- The next step is to use the actual triplet temperature, and polynomial
+  to compute the temperature shift of the color points.
+  
+- All these computations are in the `cxcyiv3` domain, the last abstraction
+  the calibration database in `aomw_colordemo` makes is to convert to the 
+  XYZ color space.
+
+- The database exposes one function `void caldb_get(tix,current,tempc,*triplet)`,
+  where `tix` is the triplet index, `cur` is the drive current, `tempc`
+  the triplet temperature, and `triplet` is an output parameter returning 
+  the calibration parameters.
+  
+- The calibration database could also expose the temperature correction 
+  polynomials for a _post_ mixing temperature correction approach. See
+  [`aomw_colormath`](examples/aomw_colormath) for an example.
+
+Once the calibration database supplies the color point of a triplet,
+the function `aomw_color_computemix()` computes the mixing ratios for that
+triplet to reach a specified target color. A step is `aomw_color_mix_to_pwm()`
+which maps the mixing ratios to 14, 15 or 16 bit PWM driver.
+
+
 ## Execution architecture
 
 One aspect in this library touches the topic of execution architecture. 
@@ -387,6 +539,14 @@ it is "query-able".
 
 ## Version history _aomw_
 
+- **2025 May 21, 0.5.0**
+  - Added module `aomw_color` with an examples `aomw_colormath.ino` and `aomw_colordemo`; updated `readme.md` accordingly.
+  - Added `aomw_topo_dump_power()` also as part of `topo enum` command.
+  - Fixed commented code in `aomw_eeprom_compare()`.
+  - Fix: made `aomw_topo.h` self contained: added `#include <stdint.h>`.
+  - Added OSP32 v12 names for LEDs (e.g. L1.0 aka OUT0).
+  - Documented the used max PWM.
+  
 - **2025 March 3, 0.4.3**
   - Extended memory for topo to cover largest possible OSP chain.
   - Fixed typos in doc and code.
@@ -394,7 +554,7 @@ it is "query-able".
 
 - **2024 November 29, 0.4.2**
   - Renamed some `err` variables to `result`.
-  - `aomw_tscript_get()` now has installe assert.
+  - `aomw_tscript_get()` now has "script installed" assert.
   - Updated API documentation of tscript.
   - Updated `readme.md` and some sources (typos, signaling -> indicator; I/O-expander).
   

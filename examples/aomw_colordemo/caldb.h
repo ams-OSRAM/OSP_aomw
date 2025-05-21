@@ -1,6 +1,6 @@
-// aomw.h - middleware for OSP applications
+// aomw_caldb.h - calibration data base
 /*****************************************************************************
- * Copyright 2024,2025 by ams OSRAM AG                                       *
+ * Copyright 2025 by ams OSRAM AG                                            *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -18,25 +18,38 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE     *
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      *
  *****************************************************************************/
-#ifndef _AOMW_H_
-#define _AOMW_H_
+#ifndef _AOMW_CALDB_H_
+#define _AOMW_CALDB_H_
 
 
-// Identifies lib version
-#define AOMW_VERSION "0.5.0"
+#include <aomw.h>     // aomw_color_mix_t
 
 
-// Include the (headers of the) modules of this app
-#include <aomw_topo.h>
-#include <aomw_flag.h>
-#include <aomw_iox.h>
-#include <aomw_eeprom.h>
-#include <aomw_tscript.h>
-#include <aomw_color.h>
+// The pre-mixing temperature correction has three methods.
+typedef enum caldb_tempmethod_e {
+  caldb_tempmethod_individual,   // use per LED coefficients
+  caldb_tempmethod_generictrain, // use generic (LED type) coefficients from ML training
+  caldb_tempmethod_genericmodel, // use generic (LED type) coefficients from model
+} caldb_tempmethod_t;
+// Set and get the pre-mixing temperature correction method used in caldb_get().
+void               caldb_tempmethod_set(caldb_tempmethod_t method);
+caldb_tempmethod_t caldb_tempmethod_get();
 
 
-// Initializes the aomw library (nothing now).
-void aomw_init(); 
+// Returns the number of triplets in the calibration database.
+int caldb_count();
+// Returns the calibration data for RGB triplet `tix` when driven with current `cur` (in A) at temperature `tempc` (in C). The data is returned as tristimulus vectors.
+void caldb_get(int tix, float cur, float tempc, aomw_color_xyz3_t * triplet);
+
+
+// A routine to perform some consistency checks on the calibration data.
+void caldb_check();
+// Computes the average color over the entire calibration database.
+void caldb_average(aomw_color_cxcyiv3_t * avg);
+// Prints the average color of red, green and blue in the calibration database and the max deviation.
+void caldb_printstats();
 
 
 #endif
+
+

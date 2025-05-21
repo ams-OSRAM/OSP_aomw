@@ -1,6 +1,6 @@
 // aomw_topo.h - compute a topological map of all nodes in the OSP chain
 /*****************************************************************************
- * Copyright 2024 by ams OSRAM AG                                            *
+ * Copyright 2024,2025 by ams OSRAM AG                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -22,6 +22,7 @@
 #define _AOMW_TOPO_H_
 
 
+#include <stdint.h>     // uint16_t
 #include <aoresult.h>   // aoresult_t
 
 
@@ -57,6 +58,8 @@ void aomw_topo_dump_nodes();
 void aomw_topo_dump_triplets();
 // Prints on Serial a list of I2C bridges from the "topology map".
 void aomw_topo_dump_i2cbridges();
+// Prints on Serial the max power consumption of the nodes in the "topology map".
+void aomw_topo_dump_power();
 
 
 // topo build in one run
