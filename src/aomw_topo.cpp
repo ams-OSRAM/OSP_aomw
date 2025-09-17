@@ -28,37 +28,47 @@
 
 
 // Terminology: a _node_ is an element in an OSP chain. Such an element has
-// an _identity_ ("id"), which is either an RGBI or a SAID. At the moment of
-// writing this, there are no other OSP node types (chips) available. A node
-// has an _address_ usually abbreviated to "addr" and addresses start at 1.
+// an _identity_ ("id"), which is either RGBI or a SAID. At the moment of
+// writing this, there are no other OSP node types (chips) available. 
+// A node has an _address_ usually abbreviated to "addr" and written with a
+// 3-digit hexadecimal number; addresses typically start at 001.
 //
-// A _triplet_ is a group of three LEDs: typically one red, one green, and
-// one blue LED. An RGBI embeds one triplet, a SAID has 3 _channels_, each
+// A _triplet_ is an assembly with three LEDs: one red, one green, and one blue 
+// LED. An RGBI embeds one triplet, a SAID has 3 _channels_, typically each 
 // channel drives one external triplet. However, it is possible that a SAID
-// is configured to use its third channel for I2C. In that case the SAID
-// only drives two triplets.
+// channel is configured for something else, like e.g. I2C. In that case the 
+// SAID drives fewer triplets. 
 //
 // A _triplet_ has a triplet index usually abbreviated to "tix" and unlike
-// addresses triplet indices start at 0. An _i2cbridge_ is a node (of type
+// addresses, triplet indices start at 0. An _i2cbridge_ is a node (of type
 // SAID) whose third channel is configured for I2C.
 //
-// An OSP chain needs to be RESET and INITed, then scanned. This is done 
-// by calling first aomw_topo_build_start(), then continuously calling 
-// aomw_topo_build_step(), until aomw_topo_build_done(). There is a 
-// shorthand that performs all these steps, aomw_topo_build(), but
+// To know what is where in an OSP chain, it needs to be RESET and INITed, 
+// then scanned for nodes (to determine their type and their configuration). 
+// This is done by calling first aomw_topo_build_start(), then continuously 
+// calling aomw_topo_build_step(), until aomw_topo_build_done(). There 
+// is a shorthand that performs all these steps, aomw_topo_build(), but
 // the start/step is better in combination with a command interpreter,
 // because of the liveliness/responsiveness.
 //
-// The build creates a topological map of all triplets, nodes and I2C bridges.
-// Once the scan is completed, it can be printed for debug with 
-// aomw_topo_dump(), but in normal applications, the topological map is 
-// inspected via the observers aomw_topo_node_xxx(), aomw_topo_triplet_xxx(), 
-// and aomw_topo_i2cbridge_xxx().
+// The build creates a topological map of all nodes, triplets and I2C bridges.
+// All RGBIs are assumed to drive a triplet, and all SAID channels are assumed 
+// to drive a triplet with two exceptions. Firstly, channel 2 is assumed to 
+// have an I2C bridge and not a triplet if OTP bit I2C_BRIDGE_EN is set.
+// Secondly channel x is assumed not to drive a triplet when OTP bit SKIPCHNx 
+// is set. The current implementation ignores OTP bits SYNC_PIN_EN, 
+// STAR_NET_EN&OTP_ADDR_EN and CH_CLUSTERING.
 //
-// The aomw_topo_build also configures the chain: clearing error flags,
-// enable crc checking, powering I2C bridges, and last but not least setting 
-// the drive current and going active. This makes all the nodes in the OSP 
-// chain ready for pwm telegrams via aomw_topo_settriplet().
+// Once the scan is completed, the map can be printed with aomw_topo_dump(), 
+// but in normal applications, the topological map is inspected via the 
+// observers aomw_topo_node_xxx(), aomw_topo_triplet_xxx(), and 
+// aomw_topo_i2cbridge_xxx().
+//
+// The build also configures the chain: clearing error flags, enable crc 
+// checking, powering I2C bridges, and last but not least setting the drive 
+// current and going active. This makes all the nodes in the OSP chain ready 
+// for pwm telegrams. In other words, the functions aomw_topo_build...()
+// and aomw_topo_settriplet() form the core of this module.
 
 
 // ESP32 has large RAM, go for max
@@ -67,7 +77,7 @@
 #define AOMW_TOPO_MAXI2CBRIDGES  AOOSP_ADDR_UNICASTMAX     
 
 
-#define AOMW_TOPO_CHAN_NONE     0xFF // channel id used internally when there are no channels (ie for RGBI)
+#define AOMW_TOPO_CHAN_NONE      0xFF // channel id used internally when there are no channels (i.e. for RGBI)
 
 
 static int      aomw_topo_loop_;                                   // Chain has direction loop (1) or bidir (0)
@@ -133,7 +143,7 @@ uint32_t aomw_topo_node_id( uint16_t addr ) {
     @param  addr
             The address of the OSP node.
     @return The number of triplets. Typically 1 for RGBI's and 3 for SAID's
-            (but 2 if the SAID has an I2C bridge).
+            (but could be less if the SAID has e.g. an I2C bridge).
     @note   Only available after aomw_topo_build() - or start/step.
     @note   addr is 1-based, so 1 <= addr <= aomw_topo_numnodes().
     @note   This is part of what is known as the OSP chain "topology map".
@@ -355,6 +365,9 @@ void aomw_topo_dump_power() {
 // === topo build helpers ===================================================
 
 
+// Run at the start of topo build, identifies the type of an OSP node.
+// Given the type (and some OTP bits like skipchns and i2cenable) 
+// records the triplets of the node.
 static aoresult_t aomw_topo_node_identify(uint16_t addr) {
   // Get the id of the node
   uint32_t id;
@@ -366,46 +379,64 @@ static aoresult_t aomw_topo_node_identify(uint16_t addr) {
   if( aomw_topo_numnodes_>=AOMW_TOPO_MAXNODES ) return aoresult_outofmem;
   aomw_topo_node_id_[aomw_topo_numnodes_] = id;
   aomw_topo_node_triplet1_[aomw_topo_numnodes_] = aomw_topo_numtriplets_;
+  
   // Register the triplets of the node
-  if( AOOSP_IDENTIFY_IS_RGBI(id) ) { // RGBI: one triplet, no channel.
+  if( AOOSP_IDENTIFY_IS_RGBI(id) ) { // RGBI: one triplet, always present, no channels.
+  
     // Record the triplet's address and channel (if there is still space)
     if( aomw_topo_numtriplets_>=AOMW_TOPO_MAXTRIPLETS ) return aoresult_outofmem;
     aomw_topo_triplet_addr_[aomw_topo_numtriplets_] = addr;
     aomw_topo_triplet_chan_[aomw_topo_numtriplets_] = AOMW_TOPO_CHAN_NONE;
     aomw_topo_numtriplets_++;
     aomw_topo_node_numtriplets_[aomw_topo_numnodes_] = 1;
-  } else if( AOOSP_IDENTIFY_IS_SAID(id) ) { // SAID: three triplets, or two plus I2C bridge
-    // Record the channel 0 triplet's address and channel (if there is still space)
-    if( aomw_topo_numtriplets_>=AOMW_TOPO_MAXTRIPLETS ) return aoresult_outofmem;
-    aomw_topo_triplet_addr_[aomw_topo_numtriplets_] = addr;
-    aomw_topo_triplet_chan_[aomw_topo_numtriplets_] = 0;
-    aomw_topo_numtriplets_++;
-    // Record the channel 1 triplet's address and channel (if there is still space)
-    if( aomw_topo_numtriplets_>=AOMW_TOPO_MAXTRIPLETS ) return aoresult_outofmem;
-    aomw_topo_triplet_addr_[aomw_topo_numtriplets_] = addr;
-    aomw_topo_triplet_chan_[aomw_topo_numtriplets_] = 1;
-    aomw_topo_numtriplets_++;
-    // Is channel 2 of this SAID wired for I2C?
+    
+  } else if( AOOSP_IDENTIFY_IS_SAID(id) ) { // SAID: three triplets, or less if alternate functions
+  
     // todo: also inspect other config bits to skip channels (haptic, sync, star, clustering?)
+    int skipchns;
+    result = aoosp_exec_skipchns_get(addr, &skipchns);
+    if( result!=aoresult_ok ) return result;
     int isbridge;
     result = aoosp_exec_i2cenable_get(addr, &isbridge );
     if( result!=aoresult_ok ) return result;
-    if( isbridge ) {
-      // Record the I2C bridge's address (if there is still space)
-      if( aomw_topo_numi2cbridges_>=AOMW_TOPO_MAXI2CBRIDGES ) return aoresult_outofmem;
-      aomw_topo_i2cbridge_addr_[aomw_topo_numi2cbridges_] = addr;
-      aomw_topo_numi2cbridges_ ++;
-      aomw_topo_node_numtriplets_[aomw_topo_numnodes_] = 2;
-    } else {
+    aomw_topo_node_numtriplets_[aomw_topo_numnodes_] = 0;
+    // Skip channel 0?
+    if( (skipchns&(1<<0)) == 0 ) {
+      // Record the channel 0 triplet's address and channel (if there is still space)
+      if( aomw_topo_numtriplets_>=AOMW_TOPO_MAXTRIPLETS ) return aoresult_outofmem;
+      aomw_topo_triplet_addr_[aomw_topo_numtriplets_] = addr;
+      aomw_topo_triplet_chan_[aomw_topo_numtriplets_] = 0;
+      aomw_topo_numtriplets_++;
+      aomw_topo_node_numtriplets_[aomw_topo_numnodes_]++;
+    }
+    // Skip channel 1?
+    if( (skipchns&(1<<1)) == 0 ) {
+      // Record the channel 1 triplet's address and channel (if there is still space)
+      if( aomw_topo_numtriplets_>=AOMW_TOPO_MAXTRIPLETS ) return aoresult_outofmem;
+      aomw_topo_triplet_addr_[aomw_topo_numtriplets_] = addr;
+      aomw_topo_triplet_chan_[aomw_topo_numtriplets_] = 1;
+      aomw_topo_numtriplets_++;
+      aomw_topo_node_numtriplets_[aomw_topo_numnodes_]++;
+    }
+    // Skip channel 2 or I2C?
+    if( (skipchns&(1<<2))==0 && !isbridge ) {
       // Record the channel 2 triplet's address and channel (if there is still space)
       if( aomw_topo_numtriplets_>=AOMW_TOPO_MAXTRIPLETS ) return aoresult_outofmem;
       aomw_topo_triplet_addr_[aomw_topo_numtriplets_] = addr;
       aomw_topo_triplet_chan_[aomw_topo_numtriplets_] = 2;
       aomw_topo_numtriplets_++;
-      aomw_topo_node_numtriplets_[aomw_topo_numnodes_] = 3;
+      aomw_topo_node_numtriplets_[aomw_topo_numnodes_]++;
+    } else if( isbridge ) {
+      // Record the I2C bridge's address (if there is still space)
+      if( aomw_topo_numi2cbridges_>=AOMW_TOPO_MAXI2CBRIDGES ) return aoresult_outofmem;
+      aomw_topo_i2cbridge_addr_[aomw_topo_numi2cbridges_] = addr;
+      aomw_topo_numi2cbridges_ ++;
     }
+  
   } else { // Unknown id
-    return aoresult_sys_id; // Or shall we ignore the node, instead of giving error
+    
+    return aoresult_sys_id; // Or ignore the node, instead of giving error?
+  
   }
   return aoresult_ok;
 }
@@ -462,20 +493,31 @@ aoresult_t aomw_topo_node_setcurrents(uint16_t addr, uint8_t flags) {
   if(   AOOSP_IDENTIFY_IS_RGBI(aomw_topo_node_id_[addr]) ) return aoresult_ok;     // Skip RGBI's
   if( ! AOOSP_IDENTIFY_IS_SAID(aomw_topo_node_id_[addr]) ) return aoresult_sys_id; // Or shall we ignore the node, instead of giving error
 
-  // Channel 0 is high power, so we select current level 2 (3x12mA)
-  result= aoosp_send_setcurchn(addr, 0, flags, 2, 2, 2);
-  if( result!=aoresult_ok) return result;
+  // Node addr is a SAID. Only set current for  channels that are used by triplets.
+  int skipchns;
+  result = aoosp_exec_skipchns_get(addr, &skipchns);
+  if( result!=aoresult_ok ) return result;
+  
+  if( (skipchns&(1<<0)) == 0 ) {
+    // Channel 0 is high power, so we select current level 2 (3x12mA)
+    result= aoosp_send_setcurchn(addr, 0, flags, 2, 2, 2);
+    if( result!=aoresult_ok) return result;
+  } 
+  
+  if( (skipchns&(1<<1)) == 0 ) {
+    // Channel 1 is low power, so we select current level 3 (3x12mA)
+    result= aoosp_send_setcurchn(addr, 1, flags, 3, 3, 3);
+    if( result!=aoresult_ok) return result;
+  }
+  
+  if( (skipchns&(1<<2)) == 0 ) {
+    // Is channel 2 in use for a triplet? If it is used for I2C bridge, bail out
+    if( aomw_topo_node_numtriplets_[addr]==2 ) return aoresult_ok;
 
-  // Channel 1 is low power, so we select current level 3 (3x12mA)
-  result= aoosp_send_setcurchn(addr, 1, flags, 3, 3, 3);
-  if( result!=aoresult_ok) return result;
-
-  // Is channel 2 in use for a triplet? If it is used for I2C bridge, bail out
-  if( aomw_topo_node_numtriplets_[addr]==2 ) return aoresult_ok;
-
-  // Channel 2 is low power, so we select current level 3 (3x12mA)
-  result= aoosp_send_setcurchn(addr, 2, flags, 3, 3, 3);
-  if( result!=aoresult_ok) return result;
+    // Channel 2 is low power, so we select current level 3 (3x12mA)
+    result= aoosp_send_setcurchn(addr, 2, flags, 3, 3, 3);
+    if( result!=aoresult_ok) return result;
+  }
 
   return aoresult_ok;
 }

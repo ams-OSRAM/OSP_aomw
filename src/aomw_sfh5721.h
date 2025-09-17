@@ -1,6 +1,6 @@
-// aomw.h - middleware for OSP applications
+// aomw_sfh5721.h - driver for ams-OSRAM SFH 5721 ambient light sensor
 /*****************************************************************************
- * Copyright 2024,2025 by ams OSRAM AG                                       *
+ * Copyright 2025 by ams OSRAM AG                                            *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -18,29 +18,35 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE     *
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      *
  *****************************************************************************/
-#ifndef _AOMW_H_
-#define _AOMW_H_
+#ifndef _AOMW_SFH5721_H_
+#define _AOMW_SFH5721_H_
 
 
-// Identifies lib version
-#define AOMW_VERSION "1.0.0"
+#include <stdint.h>     // uint16_t
+#include <aoresult.h>   // aoresult_t
 
 
-// Include the (headers of the) modules of this app
-#include <aomw_as5600.h>
-#include <aomw_as6212.h>
-#include <aomw_sfh5721.h>
-#include <aomw_sseg.h>
-#include <aomw_iox4b4l.h>
-#include <aomw_topo.h>
-#include <aomw_flag.h>
-#include <aomw_eeprom.h>
-#include <aomw_tscript.h>
-#include <aomw_color.h>
+// I2C address of the light sensor
+#define AOMW_SFH5721_DADDR7_0_SAIDSENSE  0x26 // ADDR pin to GND
+#define AOMW_SFH5721_DADDR7_1_SAIDSENSE  0x27 // ADDR pin to VDD
+#define AOMW_SFH5721_DADDR7_SAIDSENSE    AOMW_SFH5721_DADDR7_0_SAIDSENSE
 
 
-// Initializes the aomw library (nothing now).
-void aomw_init(); 
+// Reads and returns the ambient light level by the SFH5721 light sensor.
+aoresult_t aomw_sfh5721_als_get(int*als);
+
+
+// Tests if an SFH5721 is connected to the I2C bus of OSP node (SAID) with address `addr`.
+aoresult_t aomw_sfh5721_present(uint16_t addr);
+// Associates this software driver to the SFH5721 connected to the I2C bus of OSP node (SAID) with address `addr`.
+aoresult_t aomw_sfh5721_init(uint16_t addr);
 
 
 #endif
+
+
+
+
+
+
+

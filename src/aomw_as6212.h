@@ -1,6 +1,6 @@
-// aomw.h - middleware for OSP applications
+// aomw_as6212.h - driver for ams-OSRAM AS6212 temperature sensor
 /*****************************************************************************
- * Copyright 2024,2025 by ams OSRAM AG                                       *
+ * Copyright 2025 by ams OSRAM AG                                            *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -18,29 +18,37 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE     *
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      *
  *****************************************************************************/
-#ifndef _AOMW_H_
-#define _AOMW_H_
+#ifndef _AOMW_AS6212_H_
+#define _AOMW_AS6212_H_
 
 
-// Identifies lib version
-#define AOMW_VERSION "1.0.0"
+#include <stdint.h>     // uint16_t
+#include <aoresult.h>   // aoresult_t
 
 
-// Include the (headers of the) modules of this app
-#include <aomw_as5600.h>
-#include <aomw_as6212.h>
-#include <aomw_sfh5721.h>
-#include <aomw_sseg.h>
-#include <aomw_iox4b4l.h>
-#include <aomw_topo.h>
-#include <aomw_flag.h>
-#include <aomw_eeprom.h>
-#include <aomw_tscript.h>
-#include <aomw_color.h>
+// I2C address of the temperature sensor
+#define AOMW_AS6212_DADDR7_SAIDSENSE    0x48
 
 
-// Initializes the aomw library (nothing now).
-void aomw_init(); 
+// Configures the conversion rate of the AS6212 temperature sensor.
+aoresult_t aomw_as6212_convrate_set(int ms);
+// Reads and returns the conversion rate of the AS6212 temperature sensor.
+aoresult_t aomw_as6212_convrate_get(int *ms);
+// Reads and returns the temperature measured by the AS6212 temperature sensor.
+aoresult_t aomw_as6212_temp_get(int*millicelsius);
+
+
+// Tests if an AS6212 is connected to the I2C bus of OSP node (SAID) with address `addr`.
+aoresult_t aomw_as6212_present(uint16_t addr);
+// Associates this software driver to the AS6212 connected to the I2C bus of OSP node (SAID) with address `addr`.
+aoresult_t aomw_as6212_init(uint16_t addr);
 
 
 #endif
+
+
+
+
+
+
+

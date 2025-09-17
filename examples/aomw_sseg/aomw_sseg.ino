@@ -1,6 +1,6 @@
-// aomw_iox.ino - demonstrates controlling the IOX (with 4 buttons and 4 indicator LEDs)
+// aomw_sseg.ino - demonstrates the quad 7-segment display
 /*****************************************************************************
- * Copyright 2024 by ams OSRAM AG                                            *
+ * Copyright 2025 by ams OSRAM AG                                            *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -18,33 +18,29 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE     *
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      *
  *****************************************************************************/
-#include <aospi.h>
-#include <aoosp.h>
-#include <aomw.h>
+#include <aospi.h>         // aospi_init()
+#include <aoosp.h>         // aoosp_exec_resetinit()
+#include <aomw.h>          // aomw_sseg_printf()
 
 
 /*
 DESCRIPTION
-This demo initializes an OSP chain, powers the I2C bridge in a SAID and 
-checks whether there is an I/O-expander (IOX). An I/O-expander is an 
-I2C device that exposes a set of GPIO pins. If there is an IOX, the demo 
-plays a light show on the connected indicator LEDs, which can be 
-interrupted by pressing a button connected to the IOX.
+This demo initializes an OSP chain, powers the I2C bridge in a SAID and checks 
+whether there is a quad 7-segment display - as on the SAIDsense board. If there 
+is, the demo configures the display and starts showing increasing numbers.
 
 HARDWARE
-The demo needs the SAIDbasic to beconnected to the OSP32 board.
+The demo needs the SAIDsense board to be connected to the OSP32 board.
 In Arduino select board "ESP32S3 Dev Module".
 
 BEHAVIOR
-It shows a running LED using the four indicator LEDs on the SAID basic board
-(associated with the four buttons). When a button is pressed, the running 
-stops, all indicator LEDs swithc on except the one associated with the pressed
-button.
+The 7-segment display on the SAIDsense board shall first show SSEG
+(see demo.jpg), then a counter from -99.9 to 999.9 and then wrap around.
 
 OUTPUT
-Welcome to aomw_iox.ino
-version: result 0.4.1 spi 0.5.1 osp 0.4.1 mw 0.4.0
-spi: init
+Welcome to aomw_sseg.ino
+version: result 0.4.6 spi 1.0.0 osp 0.8.0 mw 0.5.0
+spi: init(MCU-B)
 osp: init
 mw: init
 demo: init
@@ -52,11 +48,20 @@ demo: init
 
 
 // The address of the SAID that has the I2C bridge
-#define ADDR 0x005 // SAID basic has IOX on SAID with addr 005
+#define ADDR 0x003 // SAIDsense connected to OSP32 (with 1 SAID); SAISsense has two SAIDs; second has display
 
 
 // Lazy way of error handling
 #define PRINT_ERROR() do { if( result!=aoresult_ok ) { Serial.printf("ERROR %s\n", aoresult_to_str(result) ); } } while(0)
+
+
+// Poll time
+#define POLL_MS 75 
+
+
+// Last poll timestamp
+int      num;
+uint32_t lastms;
 
 
 void demo_init() {
@@ -69,59 +74,51 @@ void demo_init() {
   result= aoosp_exec_i2cenable_get(ADDR, &enable); PRINT_ERROR();
   if( !enable ) result= aoresult_dev_noi2cbridge; PRINT_ERROR();
 
-  // (3) power the I2C bridge in a SAID
+  // (3) power the I2C bridge in the SAID
   result= aoosp_exec_i2cpower(ADDR); PRINT_ERROR();
 
-  // (4) check whether there is an IOX
-  result= aomw_iox_present(ADDR); PRINT_ERROR();
+  // (4) check whether there is a quad 7-segment display connected to the SAID
+  result= aomw_sseg_present(ADDR); PRINT_ERROR();
 
-  // (5) init IOX
-  result= aomw_iox_init(ADDR); PRINT_ERROR();
+  // (5) init the quad 7-segment display
+  result= aomw_sseg_init(ADDR); PRINT_ERROR();
 
+  // (6) print text on display
+  result= aomw_sseg_printf("SSEG"); PRINT_ERROR(); 
+  delay(2000);
+
+  // (7) setup poll timer
+  lastms= millis() - POLL_MS; // force print now
+  num=-999;
   Serial.printf("demo: init\n");
 }
 
 
-int led;
-uint32_t last;
+void demo_step() {
+  if( millis()-lastms>POLL_MS ) {
+    aoresult_t result;
+    result= aomw_sseg_printf("%5.1f",num/10.0); PRINT_ERROR(); 
+    num++;
+    if( num>=9999 ) num=-999;
+    lastms= millis();
+  }
+}
+
+
 void setup() {
   Serial.begin(115200);
-  Serial.printf("\n\nWelcome to aomw_iox.ino\n");
+  Serial.printf("\n\nWelcome to aomw_sseg.ino\n");
   Serial.printf("version: result %s spi %s osp %s mw %s\n", AORESULT_VERSION, AOSPI_VERSION, AOOSP_VERSION, AOMW_VERSION );
 
   aospi_init();
   aoosp_init();
   aomw_init();
-  demo_init();
-  Serial.printf("\n");
 
-  led= 0;
-  aoresult_t result= aomw_iox_led_on( AOMW_IOX_LED(led) ); PRINT_ERROR();
-  last= millis();
+  demo_init();
 }
 
+
 void loop() {
-  aoresult_t result;
-
-  result= aomw_iox_but_scan(); PRINT_ERROR();
-  if( aomw_iox_but_isdown(AOMW_IOX_BUTALL) ) {
-    // A button is pressed, compose mask of all LEDs on except pressed one
-    uint8_t leds=AOMW_IOX_LEDALL;
-    if( aomw_iox_but_isdown(AOMW_IOX_BUT0) ) leds^=AOMW_IOX_LED0;
-    if( aomw_iox_but_isdown(AOMW_IOX_BUT1) ) leds^=AOMW_IOX_LED1;
-    if( aomw_iox_but_isdown(AOMW_IOX_BUT2) ) leds^=AOMW_IOX_LED2;
-    if( aomw_iox_but_isdown(AOMW_IOX_BUT3) ) leds^=AOMW_IOX_LED3;
-    result= aomw_iox_led_set(leds); PRINT_ERROR();
-    return;
-  }
-
-  // animate indicator LEDs
-  if( millis()-last>200 ) {
-    last= millis();
-    result= aomw_iox_led_off(AOMW_IOX_LED(led)); PRINT_ERROR();
-    led= (led+1)%4;
-    result= aomw_iox_led_on(AOMW_IOX_LED(led)); PRINT_ERROR();
-  }
-
+  demo_step();
 }
 

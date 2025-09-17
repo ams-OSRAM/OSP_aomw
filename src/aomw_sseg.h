@@ -1,6 +1,6 @@
-// aomw.h - middleware for OSP applications
+// aomw_sseg.h - driver for a quad 7-segment display (driven by four IOXs)
 /*****************************************************************************
- * Copyright 2024,2025 by ams OSRAM AG                                       *
+ * Copyright 2025 by ams OSRAM AG                                            *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -18,29 +18,37 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE     *
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      *
  *****************************************************************************/
-#ifndef _AOMW_H_
-#define _AOMW_H_
+#ifndef _AOMW_SSEG_H_
+#define _AOMW_SSEG_H_
 
 
-// Identifies lib version
-#define AOMW_VERSION "1.0.0"
+// Number of 7-segment modules
+#define AOMW_SSEG_COUNT 4 // Quad 7-segment display 
 
 
-// Include the (headers of the) modules of this app
-#include <aomw_as5600.h>
-#include <aomw_as6212.h>
-#include <aomw_sfh5721.h>
-#include <aomw_sseg.h>
-#include <aomw_iox4b4l.h>
-#include <aomw_topo.h>
-#include <aomw_flag.h>
-#include <aomw_eeprom.h>
-#include <aomw_tscript.h>
-#include <aomw_color.h>
+// The I2C addresses of the IOX drivers for the 7-segment modules
+#define AOMW_SSEG_0_DADDR7_SAIDSENSE 0x38 // Most significant module (left-most)
+#define AOMW_SSEG_1_DADDR7_SAIDSENSE 0x39
+#define AOMW_SSEG_2_DADDR7_SAIDSENSE 0x3A 
+#define AOMW_SSEG_3_DADDR7_SAIDSENSE 0x3B // Least significant module (right-most)
 
 
-// Initializes the aomw library (nothing now).
-void aomw_init(); 
+// Clears the quad 7-segment display (all segments off).
+aoresult_t aomw_sseg_clr();
+// Sets the quad 7-segment display to the pattern encoded in segs an array of length AOMW_SSEG_COUNT.
+aoresult_t aomw_sseg_set(const uint8_t * segs);
+// Shows first 4 chars of str on the quad 7-segment display (pads with spaces if shorter). Dots can be part of str.
+aoresult_t aomw_sseg_print(const char*str);
+// Formatted print to the quad 7-segment display.
+aoresult_t aomw_sseg_printf(const char * fmt, ... );
+
+
+// Tests if a quad 7-segment display is connected to the I2C bus of OSP node (SAID) with address `addr`. 
+aoresult_t aomw_sseg_present(uint16_t addr );
+// Associates this software driver to the quad 7-segment connected to the I2C bus of SAID with address `addr`.
+aoresult_t aomw_sseg_init(uint16_t addr);
 
 
 #endif
+
+
