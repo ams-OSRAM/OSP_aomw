@@ -1,6 +1,6 @@
 // aomw_min.ino - minimal example using topo to blink an LED
 /*****************************************************************************
- * Copyright 2024,2025 by ams OSRAM AG                                       *
+ * Copyright 2024-2026 by ams OSRAM AG                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -43,7 +43,7 @@ while printing this to Serial.
 
 OUTPUT
 Welcome to aomw_min.ino
-version: result 0.4.1 spi 0.5.1 osp 0.4.1 mw 0.4.0
+version: result 0.4.1, spi 0.5.1, osp 0.4.1, mw 0.4.0
 spi: init
 osp: init
 mw: init
@@ -63,7 +63,7 @@ uint32_t time0us,time1us;
 void setup() {
   Serial.begin(115200);
   Serial.printf("\n\nWelcome to aomw_min.ino\n");
-  Serial.printf("version: result %s spi %s osp %s mw %s\n", AORESULT_VERSION, AOSPI_VERSION, AOOSP_VERSION, AOMW_VERSION );
+  Serial.printf("version: result %s, spi %s, osp %s, mw %s\n", AORESULT_VERSION, AOSPI_VERSION, AOOSP_VERSION, AOMW_VERSION );
 
   aospi_init();
   aoosp_init();

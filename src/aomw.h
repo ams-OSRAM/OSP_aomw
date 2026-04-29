@@ -1,6 +1,6 @@
 // aomw.h - middleware for OSP applications
 /*****************************************************************************
- * Copyright 2024,2025 by ams OSRAM AG                                       *
+ * Copyright 2024-2026 by ams OSRAM AG                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -23,7 +23,7 @@
 
 
 // Identifies lib version
-#define AOMW_VERSION "1.0.0"
+#define AOMW_VERSION "1.0.1"
 
 
 // Include the (headers of the) modules of this app

@@ -1,6 +1,6 @@
 // aomw_sfh5721.cpp - driver for ams-OSRAM SFH 5721 ambient light sensor
 /*****************************************************************************
- * Copyright 2025 by ams OSRAM AG                                            *
+ * Copyright 2025-2026 by ams OSRAM AG                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -230,9 +230,9 @@ aoresult_t aomw_sfh5721_als_get(int*als) {
             for telegram transmission errors.
     @note   This routine assumes the light sensor has I2C device address
             AOMW_SFH5721_DADDR7_SAIDSENSE.
-    @note   Sends I2C telegrams, so OSP must be initialized, eg via a call
-            to aoosp_exec_resetinit(), and the I2C bus must be powered, eg via 
-            a call to aoosp_exec_i2cpower(). Function aomw_topo_build()
+    @note   Sends I2C telegrams, so OSP must be initialized, e.g. via a call
+            to aoosp_exec_resetinit(), and the I2C bus must be powered, e.g. 
+            via a call to aoosp_exec_i2cpower(). Function aomw_topo_build()
             ensures both.
 */
 aoresult_t aomw_sfh5721_present(uint16_t addr ) {
@@ -256,7 +256,7 @@ aoresult_t aomw_sfh5721_present(uint16_t addr ) {
             connected to the I2C bus of OSP node (SAID) with address `addr`.
     @param  addr
             The OSP address of a SAID with an I2C bridge with a light sensor.
-    @return aoresult_ok           if LEDs are set successfully
+    @return aoresult_ok           if init is successful
             other error code      if there is a (communications) error
     @note   The sensor is controlled via OSP, hence the possibility 
             for telegram transmission errors.
@@ -264,9 +264,9 @@ aoresult_t aomw_sfh5721_present(uint16_t addr ) {
             AOMW_SFH5721_DADDR7_SAIDSENSE.
     @note   It is allowed to call this function again, to associate this
             driver with a different sensor.
-    @note   Sends I2C telegrams, so OSP must be initialized, eg via a call
-            to aoosp_exec_resetinit(), and the I2C bus must be powered, eg via 
-            a call to aoosp_exec_i2cpower(). Function aomw_topo_build()
+    @note   Sends I2C telegrams, so OSP must be initialized, e.g. via a call
+            to aoosp_exec_resetinit(), and the I2C bus must be powered, e.g. 
+            via a call to aoosp_exec_i2cpower(). Function aomw_topo_build()
             ensures both.
 */
 aoresult_t aomw_sfh5721_init(uint16_t addr) {

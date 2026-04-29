@@ -715,6 +715,11 @@ it is "query-able".
 
 ## Version history _aomw_
 
+- **2026 April 29, 1.0.1**
+  - Versions printout now separated with `,` (in examples).
+  - Documentation improved in `aomw_sfh5721.cpp`.
+  - Bug fix: reorder do/print in `aomw_flag.ino`.
+  
 - **2025 September 17, 1.0.0**
   - Compatibility **warning** `aomw_iox` module and its demo `aomw_iox.ino` are removed (replaced by `aomw_iox4b4l`).
   - Updated documentation.

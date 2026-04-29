@@ -1,6 +1,6 @@
 // aomw_sfh5721.ino - demonstrates reading the ams-OSRAM SFH 5721 ambient light sensor
 /*****************************************************************************
- * Copyright 2025 by ams OSRAM AG                                            *
+ * Copyright 2025-2026 by ams OSRAM AG                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -40,7 +40,7 @@ see screenshot in SerialPlotter.png).
 
 OUTPUT
 Welcome to aomw_sfh5721.ino
-version: result 0.4.6 spi 1.0.0 osp 0.8.0 mw 0.5.0
+version: result 0.4.6, spi 1.0.0, osp 0.8.0, mw 0.5.0
 spi: init(MCU-B)
 osp: init
 mw: init
@@ -68,7 +68,7 @@ SFH5721(lux):577
 
 
 // The address of the SAID that has the I2C bridge
-#define ADDR 0x003 // SAIDsense connected to OSP32 (with 1 SAID); SAISsense has two SAIDs; second has i2C bridge
+#define ADDR 0x003 // SAIDsense connected to OSP32. OSP32 has 1 SAID; SAISsense has two SAIDs; second has I2C bridge
 
 
 // Lazy way of error handling
@@ -127,7 +127,7 @@ void demo_step() {
 void setup() {
   Serial.begin(115200);
   Serial.printf("\n\nWelcome to aomw_sfh5721.ino\n");
-  Serial.printf("version: result %s spi %s osp %s mw %s\n", AORESULT_VERSION, AOSPI_VERSION, AOOSP_VERSION, AOMW_VERSION );
+  Serial.printf("version: result %s, spi %s, osp %s, mw %s\n", AORESULT_VERSION, AOSPI_VERSION, AOOSP_VERSION, AOMW_VERSION );
 
   aospi_init();
   aoosp_init();

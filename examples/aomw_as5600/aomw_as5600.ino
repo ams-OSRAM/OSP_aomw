@@ -1,6 +1,6 @@
 // aomw_as5600.ino - demonstrates reading a magnetic rotary sensor AS5600
 /*****************************************************************************
- * Copyright 2025 by ams OSRAM AG                                            *
+ * Copyright 2025-2026 by ams OSRAM AG                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -40,7 +40,7 @@ Nothing to be seen on the OSP chain; check the Serial out
 
 OUTPUT
 Welcome to aomw_as5600.ino
-version: result 0.4.6 spi 1.0.0 osp 0.8.0 mw 0.5.0
+version: result 0.4.6, spi 1.0.0, osp 0.8.0, mw 0.5.0
 spi: init(MCU-B)
 osp: init
 mw: init
@@ -121,7 +121,7 @@ void demo_step() {
 void setup() {
   Serial.begin(115200);
   Serial.printf("\n\nWelcome to aomw_as5600.ino\n");
-  Serial.printf("version: result %s spi %s osp %s mw %s\n", AORESULT_VERSION, AOSPI_VERSION, AOOSP_VERSION, AOMW_VERSION );
+  Serial.printf("version: result %s, spi %s, osp %s, mw %s\n", AORESULT_VERSION, AOSPI_VERSION, AOOSP_VERSION, AOMW_VERSION );
 
   aospi_init();
   aoosp_init();

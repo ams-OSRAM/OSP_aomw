@@ -1,6 +1,6 @@
 // aomw_tscript.ino - demonstrates playing a script
 /*****************************************************************************
- * Copyright 2024 by ams OSRAM AG                                            *
+ * Copyright 2024-2026 by ams OSRAM AG                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -44,7 +44,7 @@ Depends on the animation script
 
 OUTPUT
 Welcome to aomw_tscript.ino
-version: result 0.4.1 spi 0.5.1 osp 0.4.1 mw 0.4.0
+version: result 0.4.1, spi 0.5.1, osp 0.4.1, mw 0.4.0
 spi: init
 osp: init
 mw: init
@@ -79,7 +79,7 @@ static const uint16_t walk[] = {
 void setup() {
   Serial.begin(115200);
   Serial.printf("\n\nWelcome to aomw_tscript.ino\n");
-  Serial.printf("version: result %s spi %s osp %s mw %s\n", AORESULT_VERSION, AOSPI_VERSION, AOOSP_VERSION, AOMW_VERSION );
+  Serial.printf("version: result %s, spi %s, osp %s, mw %s\n", AORESULT_VERSION, AOSPI_VERSION, AOOSP_VERSION, AOMW_VERSION );
 
   aospi_init();
   aoosp_init();

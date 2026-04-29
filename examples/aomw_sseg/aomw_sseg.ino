@@ -1,6 +1,6 @@
 // aomw_sseg.ino - demonstrates the quad 7-segment display
 /*****************************************************************************
- * Copyright 2025 by ams OSRAM AG                                            *
+ * Copyright 2025-2026 by ams OSRAM AG                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -39,7 +39,7 @@ The 7-segment display on the SAIDsense board shall first show SSEG
 
 OUTPUT
 Welcome to aomw_sseg.ino
-version: result 0.4.6 spi 1.0.0 osp 0.8.0 mw 0.5.0
+version: result 0.4.6, spi 1.0.0, osp 0.8.0, mw 0.5.0
 spi: init(MCU-B)
 osp: init
 mw: init
@@ -108,7 +108,7 @@ void demo_step() {
 void setup() {
   Serial.begin(115200);
   Serial.printf("\n\nWelcome to aomw_sseg.ino\n");
-  Serial.printf("version: result %s spi %s osp %s mw %s\n", AORESULT_VERSION, AOSPI_VERSION, AOOSP_VERSION, AOMW_VERSION );
+  Serial.printf("version: result %s, spi %s, osp %s, mw %s\n", AORESULT_VERSION, AOSPI_VERSION, AOOSP_VERSION, AOMW_VERSION );
 
   aospi_init();
   aoosp_init();

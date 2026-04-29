@@ -1,6 +1,6 @@
 // aomw_topodemo.ino - uses the topology map to create a running led animation
 /*****************************************************************************
- * Copyright 2024 by ams OSRAM AG                                            *
+ * Copyright 2024-2026 by ams OSRAM AG                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -42,7 +42,7 @@ from right to left.
 
 OUTPUT
 Welcome to aomw_topodemo.ino
-version: result 0.4.1 spi 0.5.1 osp 0.4.1 mw 0.4.0
+version: result 0.4.1, spi 0.5.1, osp 0.4.1, mw 0.4.0
 spi: init
 osp: init
 mw: init
@@ -126,7 +126,7 @@ int appstate;
 void setup() {
   Serial.begin(115200);
   Serial.printf("\n\nWelcome to aomw_topodemo.ino\n");
-  Serial.printf("version: result %s spi %s osp %s mw %s\n", AORESULT_VERSION, AOSPI_VERSION, AOOSP_VERSION, AOMW_VERSION );
+  Serial.printf("version: result %s, spi %s, osp %s, mw %s\n", AORESULT_VERSION, AOSPI_VERSION, AOOSP_VERSION, AOMW_VERSION );
 
   aospi_init();
   aoosp_init();

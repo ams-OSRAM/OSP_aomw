@@ -1,6 +1,6 @@
 // aomw_iox4b4l.ino - demonstrates controlling the IOX (on SAIDsense, connected to 4 buttons and 4 LEDs)
 /*****************************************************************************
- * Copyright 2024,2025 by ams OSRAM AG                                       *
+ * Copyright 2024-2026 by ams OSRAM AG                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -47,7 +47,7 @@ button.
 
 OUTPUT
 Welcome to aomw_iox4b4l.ino
-version: result 0.4.6 spi 1.0.0 osp 0.8.0 mw 0.5.0
+version: result 0.4.6, spi 1.0.0, osp 0.8.0, mw 0.5.0
 cfg: 005 20 FDB96420
 spi: init(MCU-B)
 osp: init
@@ -101,7 +101,7 @@ uint32_t last;
 void setup() {
   Serial.begin(115200);
   Serial.printf("\n\nWelcome to aomw_iox4b4l.ino\n");
-  Serial.printf("version: result %s spi %s osp %s mw %s\n", AORESULT_VERSION, AOSPI_VERSION, AOOSP_VERSION, AOMW_VERSION );
+  Serial.printf("version: result %s, spi %s, osp %s, mw %s\n", AORESULT_VERSION, AOSPI_VERSION, AOOSP_VERSION, AOMW_VERSION );
   Serial.printf("cfg: %03X %02X %08X\n",ADDR,DADDR7,PINCFG);
 
   aospi_init();
