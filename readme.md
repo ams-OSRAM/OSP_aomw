@@ -1,5 +1,6 @@
 # OSP Middleware aomw
 
+
 Library "OSP Middleware aomw", usually abbreviated to "aomw",
 is one of the **aolibs**; short for Arduino OSP libraries from ams-OSRAM.
 This suite implements support for chips that use the Open System Protocol, 
@@ -715,11 +716,16 @@ it is "query-able".
 
 ## Version history _aomw_
 
+- **2026 June 24, 1.1.0**
+  - Added `AOMW_SSEG_SEGx` to `aomw_sseg.h`; updated doc for `aomw_sseg_set()`.
+  - Fix bug in `aomw_as5600_conf()` (even with bug the correct config happened to be written).
+  - Fixed line endings in `aomw_sseg.ino`.
+
 - **2026 April 29, 1.0.1**
   - Versions printout now separated with `,` (in examples).
   - Documentation improved in `aomw_sfh5721.cpp`.
   - Bug fix: reorder do/print in `aomw_flag.ino`.
-  
+
 - **2025 September 17, 1.0.0**
   - Compatibility **warning** `aomw_iox` module and its demo `aomw_iox.ino` are removed (replaced by `aomw_iox4b4l`).
   - Updated documentation.

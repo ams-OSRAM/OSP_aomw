@@ -1,6 +1,6 @@
 // aomw_as5600.cpp - driver for ams-OSRAM AS5600 magnetic rotary sensor
 /*****************************************************************************
- * Copyright 2025 by ams OSRAM AG                                            *
+ * Copyright 2025, 2026 by ams OSRAM AG                                      *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -80,6 +80,7 @@ static uint16_t aomw_as5600_saidaddr;
 #define   AOMW_AS5600_1R0B_STATUS_ML           0b00010000
 #define   AOMW_AS5600_1R0B_STATUS_MH           0b00001000
 #define AOMW_AS5600_1R1A_AGC                 0x1A
+#define   AOMW_AS5600_1R1A_AGC_MID             0x80
 #define AOMW_AS5600_2R1B_MAGNITUDE           0x1B
 #define AOMW_AS5600_1RFF_BURN                0xFF
 
@@ -93,23 +94,28 @@ static aoresult_t aomw_as5600_conf() {
   buf[0]= 0x00; buf[1]= 0x00;
   result= aoosp_exec_i2cwrite8(aomw_as5600_saidaddr,AOMW_AS5600_DADDR7_SAIDSENSE, AOMW_AS5600_2R01_ZPOS, buf, 2 );
   if( result!=aoresult_ok ) return result;
+  
   // Clear MPOS
   buf[0]= 0x00; buf[1]= 0x00;
   result= aoosp_exec_i2cwrite8(aomw_as5600_saidaddr,AOMW_AS5600_DADDR7_SAIDSENSE, AOMW_AS5600_2R03_MPOS, buf, 2 );
   if( result!=aoresult_ok ) return result;
+  
   // Clear MANG
   buf[0]= 0x00; buf[1]= 0x00;
   result= aoosp_exec_i2cwrite8(aomw_as5600_saidaddr,AOMW_AS5600_DADDR7_SAIDSENSE, AOMW_AS5600_2R05_MANG, buf, 2 );
   if( result!=aoresult_ok ) return result;
 
   // CONF to default
-  buf[0]= AOMW_AS5600_2R07_CONF_WD_OFF || AOMW_AS5600_2R07_CONF_FTH_SLOW || AOMW_AS5600_2R07_CONF_SF_16X; 
-  buf[1]= AOMW_AS5600_2R07_CONF_PWMF_115HZ || AOMW_AS5600_2R07_CONF_HYST_OFF || AOMW_AS5600_2R07_CONF_HYST_OFF || AOMW_AS5600_2R07_CONF_PM_NOM;
+  uint16_t conf = 
+    AOMW_AS5600_2R07_CONF_WD_OFF | AOMW_AS5600_2R07_CONF_FTH_SLOW | AOMW_AS5600_2R07_CONF_SF_16X |
+    AOMW_AS5600_2R07_CONF_PWMF_115HZ | AOMW_AS5600_2R07_CONF_OUTS_ANAFR | AOMW_AS5600_2R07_CONF_HYST_OFF | AOMW_AS5600_2R07_CONF_PM_NOM;
+  buf[0]= (conf >> 8 ) & 0xFF;
+  buf[1]= (conf >> 0 ) & 0xFF; 
   result= aoosp_exec_i2cwrite8(aomw_as5600_saidaddr,AOMW_AS5600_DADDR7_SAIDSENSE, AOMW_AS5600_2R07_CONF, buf, 2 );
   if( result!=aoresult_ok ) return result;
   
   // AGC to default
-  buf[0]= 0x80;;
+  buf[0]= AOMW_AS5600_1R1A_AGC_MID;
   result= aoosp_exec_i2cwrite8(aomw_as5600_saidaddr,AOMW_AS5600_DADDR7_SAIDSENSE, AOMW_AS5600_1R1A_AGC, buf, 1 );
   if( result!=aoresult_ok ) return result;
   

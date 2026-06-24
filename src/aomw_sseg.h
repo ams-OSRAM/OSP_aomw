@@ -1,6 +1,6 @@
 // aomw_sseg.h - driver for a quad 7-segment display (driven by four IOXs)
 /*****************************************************************************
- * Copyright 2025 by ams OSRAM AG                                            *
+ * Copyright 2025,2026 by ams OSRAM AG                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -31,6 +31,25 @@
 #define AOMW_SSEG_1_DADDR7_SAIDSENSE 0x39
 #define AOMW_SSEG_2_DADDR7_SAIDSENSE 0x3A 
 #define AOMW_SSEG_3_DADDR7_SAIDSENSE 0x3B // Least significant module (right-most)
+
+// Bit masks for the 7 segments of a sseg unit
+//    --a--
+//   |     |
+//   f     b
+//   |     |
+//    --g--
+//   |     |
+//   e     c
+//   |     |
+//    --d--  (p)
+#define AOMW_SSEG_SEGA  0x01
+#define AOMW_SSEG_SEGB  0x02
+#define AOMW_SSEG_SEGC  0x04
+#define AOMW_SSEG_SEGD  0x08
+#define AOMW_SSEG_SEGE  0x10
+#define AOMW_SSEG_SEGF  0x20
+#define AOMW_SSEG_SEGG  0x40
+#define AOMW_SSEG_SEGP  0x80
 
 
 // Clears the quad 7-segment display (all segments off).

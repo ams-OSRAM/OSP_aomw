@@ -1,6 +1,6 @@
 // aomw_sseg.cpp - driver for a quad 7-segment display (driven by four IOXs)
 /*****************************************************************************
- * Copyright 2025 by ams OSRAM AG                                            *
+ * Copyright 2025,2026 by ams OSRAM AG                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
@@ -157,7 +157,7 @@ aoresult_t aomw_sseg_clr() {
     @brief  Sets the quad 7-segment display to the pattern encoded in segs.
     @param  segs
             segs[i] is a bit mask indicating which segments of 7-segment 
-            module i to switch on. 
+            module i to switch on. Must be AOMW_SSEG_COUNT long.
     @return aoresult_ok if display is updated
             other       OSP (communication) errors
     @note   Asserts if aomw_sseg_init() has not yet been called.
@@ -165,7 +165,8 @@ aoresult_t aomw_sseg_clr() {
             for telegram transmission errors.
     @note   Mask segs[i] indicates which segments of the 7-segment module 
             to switch on. The segments are mapped as follows to bits:
-            (msb) pgfedcba (lsb)
+            (msb) pgfedcba (lsb), see also macros AOMW_SSEG_SEGx.
+            
              pos  76543210
                --a--
               |     |
@@ -176,6 +177,7 @@ aoresult_t aomw_sseg_clr() {
               e     c
               |     |
                --d--  (p)
+               
     @note   Array segs must be AOMW_SSEG_COUNT long, most significant
             (left-most) module first.
 */
